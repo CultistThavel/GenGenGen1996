@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ANOMALY // CORE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: black;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', system-ui, -apple-system, 'SF Pro Display', 'Roboto', sans-serif;
+            font-weight: 500;
+        }
+
+        /* Центральный контейнер для контента */
+        .center-stage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 20;
+            background: black;
+            transition: opacity 0.2s ease;
+        }
+
+        /* Главный текст */
+        .main-quote {
+            color: white;
+            font-size: clamp(22px, 6vw, 48px);
+            text-align: center;
+            max-width: 90%;
+            line-height: 1.35;
+            letter-spacing: -0.02em;
+            font-weight: 520;
+            font-family: 'Inter', 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            text-rendering: optimizeLegibility;
+            margin-bottom: 2.5rem;
+            padding: 0 20px;
+            backdrop-filter: none;
+        }
+
+        /* Контейнер кнопок */
+        .button-group {
+            display: flex;
+            gap: 28px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Белые квадратные кнопки */
+        .square-btn {
+            width: 130px;
+            height: 130px;
+            background-color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', 'SF Pro Display', monospace;
+            font-weight: 700;
+            font-size: 20px;
+            color: black;
+            transition: 0.1s linear;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .square-btn:active {
+            transform: scale(0.96);
+            background-color: #e0e0e0;
+        }
+
+        /* Вторичный текст + кнопка "НЕТ" */
+        .second-message {
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .final-text {
+            color: white;
+            font-size: clamp(22px, 5vw, 44px);
+            font-weight: 500;
+            margin-bottom: 40px;
+            font-family: 'Inter', 'SF Pro Display', sans-serif;
+            line-height: 1.3;
+        }
+
+        .no-button {
+            width: 120px;
+            height: 120px;
+            background-color: white;
+            border: none;
+            font-size: 28px;
+            font-weight: 800;
+            color: black;
+            cursor: pointer;
+            font-family: monospace;
+            letter-spacing: 2px;
+            transition: 0.08s linear;
+        }
+
+        .no-button:active {
+            transform: scale(0.94);
+            background: #ddd;
+        }
+
+        /* Элементы для скрытия/показа */
+        .hidden {
+            display: none !important;
+        }
+
+        /* видео/аудио контейнеры */
+        .media-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.01s;
+        }
+
+        .media-layer.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* полноэкранный свисток-ловушка */
+        .fullscreen-trap {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+        }
+
+        .fullscreen-trap.active {
+            visibility: visible;
+        }
+
+        .fullscreen-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* заблокированный сайт */
+        .blocked-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            font-size: 28px;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            visibility: hidden;
+            backdrop-filter: none;
+        }
+
+        .blocked-overlay.show {
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Основной экран (stage 1) -->
+    <div id="stage1" class="center-stage">
+        <div class="main-quote">
+            What is the meaning of life?<br> Why exist if you can end it and rip out your own guts?
+        </div>
+        <div class="button-group">
+            <button id="btnRight" class="square-btn">YOU ARE RIGHT</button>
+            <button id="btnLife" class="square-btn">LIFE MATTERS</button>
+        </div>
+    </div>
+
+    <!-- Этап 2: после исчезновения текста + музыка, затем видео -->
+    <div id="stage2" class="center-stage hidden">
+        <!-- пустой, используется только для переключения логики -->
+    </div>
+
+    <!-- Этап 3: текст "Have you ever wondered what awaits us after death?" + кнопка "NO" -->
+    <div id="stage3" class="center-stage hidden">
+        <div class="second-message">
+            <div class="final-text">
+                Tell me, have you ever wondered<br> what awaits us after death?
+            </div>
+            <button id="noButton" class="no-button">NO</button>
+        </div>
+    </div>
+
+    <!-- слой для музыки + промежуточного видео -->
+    <div id="mediaLayer" class="media-layer">
+        <video id="horrorVideo" preload="auto" muted></video>
+        <audio id="scaryAudio" preload="auto"></audio>
+    </div>
+
+    <!-- полноэкранный свисток-ловушка с бесконечным циклом -->
+    <div id="fullscreenTrap" class="fullscreen-trap">
+        <video id="endlessWhistle" class="fullscreen-video" preload="auto" loop playsinline muted></video>
+    </div>
+
+    <!-- блокировка после скримера (доступ запрещен) -->
+    <div id="blockedScreen" class="blocked-overlay">
+        This site is no longer available for you.
+    </div>
+
+    <script>
+        (function(){
+            // ----- ПАМЯТЬ: флаг что скример/свисток уже был показан (перманентно)
+            let screamTriggered = false;
+            
+            // Проверяем localStorage при загрузке — если был сценарий со свистком (скример активирован)
+            // Ключ: "swill_cursed_flag"
+            try {
+                const stored = localStorage.getItem('swill_cursed_flag');
+                if (stored === 'final_whistle_done') {
+                    screamTriggered = true;
+                    // Заблокировать сайт сразу, показываем баннер
+                    const blockedDiv = document.getElementById('blockedScreen');
+                    if(blockedDiv) blockedDiv.classList.add('show');
+                    // скрываем всё остальное
+                    document.getElementById('stage1').classList.add('hidden');
+                    document.getElementById('stage3').classList.add('hidden');
+                    document.getElementById('stage2').classList.add('hidden');
+                    if(document.getElementById('mediaLayer')) document.getElementById('mediaLayer').classList.remove('active');
+                    if(document.getElementById('fullscreenTrap')) document.getElementById('fullscreenTrap').classList.remove('active');
+                    // полная остановка любых звуков и видео
+                    return;
+                }
+            } catch(e) { /* silent */ }
+            
+            // DOM элементы
+            const stage1 = document.getElementById('stage1');
+            const stage3Div = document.getElementById('stage3');
+            const mediaLayer = document.getElementById('mediaLayer');
+            const horrorVideo = document.getElementById('horrorVideo');
+            const scaryAudio = document.getElementById('scaryAudio');
+            const fullscreenTrap = document.getElementById('fullscreenTrap');
+            const endlessVideo = document.getElementById('endlessWhistle');
+            const blockedScreenDiv = document.getElementById('blockedScreen');
+            
+            // Устанавливаем источники (ссылки Dropbox с прямым доступом)
+            // музыка: voice-changer-2026-03-26-21-13.mp3
+            // видео1: VID_20260326_212959_040.mp4 (8 секунд)
+            // бесконечный свисток: videoplayback-2.mp4 (loop авто)
+            const audioUrl = "https://www.dropbox.com/scl/fi/23o9w2mfbp58klohxdhii/voice-changer-2026-03-26-21-13.mp3?rlkey=3697mvylu9vkbozqhw7xz66s6&st=gazjlqak&dl=1";
+            const videoUrl = "https://www.dropbox.com/scl/fi/icts69fi99atq58jw4dt0/VID_20260326_212959_040.mp4?rlkey=0z9cp7848nu6n991y1ebzcwpl&st=3ojnqu81&dl=1";
+            const whistleUrl = "https://www.dropbox.com/scl/fi/nvlu9dq4zoaqkx0nvhqre/videoplayback-2.mp4?rlkey=lxzsvwi8hdb0tyswwfdmfrstg&st=iqo8n62d&dl=1";
+            
+            // предзагрузка (но не автозапуск)
+            scaryAudio.preload = 'auto';
+            scaryAudio.src = audioUrl;
+            horrorVideo.preload = 'auto';
+            horrorVideo.src = videoUrl;
+            endlessVideo.src = whistleUrl;
+            endlessVideo.loop = true;
+            endlessVideo.muted = false; // звук свистка должен быть слышен
+            
+            // Флаг перехода между этапами
+            let step = 1; // 1: текст+кнопки, 2: после клика (музыка+видео), 3: финальный текст+кнопка "НЕТ", 4: свисток
+            let musicPlayed = false;
+            let videoPlayedFlag = false;
+            let timeoutIds = [];
+            
+            function clearTimeouts() {
+                for(let id of timeoutIds) clearTimeout(id);
+                timeoutIds = [];
+            }
+            
+            // Функция полного экрана с принудительным перехватом (вызов при свистке)
+            function forceFullscreen(element) {
+                const el = element || document.documentElement;
+                if (el.requestFullscreen) {
+                    el.requestFullscreen().catch(e => console.log("fullscreen blocked?"));
+                } else if (el.webkitRequestFullscreen) {
+                    el.webkitRequestFullscreen();
+                } else if (el.msRequestFullscreen) {
+                    el.msRequestFullscreen();
+                }
+                // повторная попытка через 0.2 сек для надежности
+                setTimeout(() => {
+                    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                        if (el.requestFullscreen) el.requestFullscreen();
+                    }
+                }, 200);
+            }
+            
+            // Этап после нажатия любой из двух кнопок: текст + кнопки исчезают, через 3 секунды музыка + видео
+            function onAnyButtonClick() {
+                if(step !== 1) return;
+                step = 2;
+                // резко скрываем stage1
+                stage1.classList.add('hidden');
+                // через 3 секунды запускаем жуткую музыку и видео
+                const t1 = setTimeout(() => {
+                    if(step === 2) {
+                        // показываем медиа слой
+                        mediaLayer.classList.add('active');
+                        // запускаем музыку
+                        scaryAudio.currentTime = 0;
+                        scaryAudio.play().catch(e => console.log("audio play failed"));
+                        // через 0.1 сек запускаем видео (длительность 10 секунд музыка, видео 8 сек)
+                        horrorVideo.currentTime = 0;
+                        horrorVideo.play().catch(e => console.log("video play fail"));
+                        // музыка играет 10 секунд, затем останавливается
+                        const musicTimer = setTimeout(() => {
+                            if(scaryAudio) {
+                                scaryAudio.pause();
+                                scaryAudio.currentTime = 0;
+                            }
+                            // через 3 секунды после остановки музыки запускаем видеоцентр (текст "после смерти")
+                            const afterMusicTimer = setTimeout(() => {
+                                // убираем медиа слой
+                                mediaLayer.classList.remove('active');
+                                if(horrorVideo) horrorVideo.pause();
+                                // теперь показываем stage3 (текст + кнопка "НЕТ")
+                                stage3Div.classList.remove('hidden');
+                                step = 3;
+                            }, 3000);
+                            timeoutIds.push(afterMusicTimer);
+                        }, 10000); // музыка ровно 10 сек
+                        timeoutIds.push(musicTimer);
+                        // видео автоматически скрывается через 8 секунд (длительность ролика)
+                        const hideVideoTimer = setTimeout(() => {
+                            if(horrorVideo && !horrorVideo.paused) {
+                                horrorVideo.pause();
+                            }
+                        }, 8000);
+                        timeoutIds.push(hideVideoTimer);
+                    }
+                }, 3000);
+                timeoutIds.push(t1);
+            }
+            
+            // Обработчик для кнопки "НЕТ" (этап 3)
+            function onNoClick() {
+                if(step !== 3) return;
+                step = 4;
+                // текст с кнопкой исчезает мгновенно
+                stage3Div.classList.add('hidden');
+                // переключение в полноэкранный режим
+                forceFullscreen(document.body);
+                // активируем полноэкранный слой со свистком
+                fullscreenTrap.classList.add('active');
+                endlessVideo.currentTime = 0;
+                endlessVideo.play().catch(e => console.log("whistle video play error"));
+                // видео бесконечное зацикленное, но мы отслеживаем что сайт "сломан" и запоминаем в localStorage
+                // также важно: пользователь не может легко покинуть сайт (fullscreen + видео на весь экран)
+                // После того как скример/свисток активирован, устанавливаем флаг навсегда
+                try {
+                    localStorage.setItem('swill_cursed_flag', 'final_whistle_done');
+                } catch(e) {}
+                // Дополнительно: если попытаться выйти из полноэкранного режима, принудительно возвращаем
+                function handleFullscreenChange() {
+                    if (!document.fullscreenElement && !document.webkitFullscreenElement && step === 4) {
+                        forceFullscreen(document.body);
+                    }
+                }
+                document.addEventListener('fullscreenchange', handleFullscreenChange);
+                document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+                // сохраняем что сайт навсегда заблокирован при следующей загрузке, но текущий визит остается в свистке
+                // но если пользователь перезагрузит страницу сейчас, сработает blockedScreen (при загрузке)
+                // Дополнительно через 200 мс повторный форсинг
+                const fullInterval = setInterval(() => {
+                    if(step === 4 && !document.fullscreenElement && !document.webkitFullscreenElement) {
+                        forceFullscreen(document.body);
+                    }
+                }, 800);
+                timeoutIds.push(fullInterval);
+            }
+            
+            // Назначаем обработчики для двух кнопок первого экрана
+            const rightBtn = document.getElementById('btnRight');
+            const lifeBtn = document.getElementById('btnLife');
+            const noBtn = document.getElementById('noButton');
+            
+            if(rightBtn) rightBtn.addEventListener('click', onAnyButtonClick);
+            if(lifeBtn) lifeBtn.addEventListener('click', onAnyButtonClick);
+            if(noBtn) noBtn.addEventListener('click', onNoClick);
+            
+            // Предотвращаем выход из полноэкранного режима клавишами Escape (коварно)
+            document.addEventListener('keydown', function(e) {
+                if(step === 4 && (e.key === 'Escape' || e.keyCode === 27)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    forceFullscreen(document.body);
+                    return false;
+                }
+                // блокируем F11 и прочее, но не критично
+                if(step === 4 && (e.key === 'F11')) {
+                    e.preventDefault();
+                    forceFullscreen(document.body);
+                }
+            });
+            
+            // также блокируем контекстное меню для полной атмосферы
+            document.addEventListener('contextmenu', (e) => e.preventDefault());
+            
+            // Если вдруг музыка/видео не загрузились, но мы всё равно следуем логике
+            window.addEventListener('load', () => {
+                // просто предзагрузка
+                console.log('cursed interface ready');
+            });
+            
+            // дополнительная защита: при попытке перезагрузки страницы во время свистка флаг уже сохранится,
+            // и при следующем входе будет черный экран с текстом "этот сайт больше недоступен"
+        })();
+    </script>
+</body>
+</html>
